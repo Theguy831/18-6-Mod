@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>18/6 Precision Dashboard</title>
+    <link href="https://cloudflare.com" rel="stylesheet">
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        :root {
+            --bg: #0b0e14; --card: #161b22; --accent: #2f81f7; --text: #f0f6fc;
+            --text-dim: #8b949e; --success: #3fb950; --danger: #f85149; --border: #30363d;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg); color: var(--text); margin: 0; padding: 30px 0;
+        }
+        .container { padding: 0 16px; max-width: 500px; margin: 0 auto; }
+
+        /* Timer UI */
+        .timer-card { background: linear-gradient(145deg, #161b22, #0d1117); border: 1px solid var(--border); border-radius: 28px; padding: 35px 24px; margin-bottom: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .progress-container { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+        svg { transform: rotate(-90deg); width: 220px; height: 220px; }
+        circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+        .circle-bg { stroke: var(--border); }
+        .circle-progress { stroke: var(--accent); stroke-dasharray: 597; stroke-dashoffset: 597; transition: stroke-dashoffset 1s linear, stroke 0.5s ease; filter: drop-shadow(0 0 8px var(--accent)); }
+        .timer-content { position: absolute; text-align: center; }
+        #timer-label { font-size: 10px; font-weight: 800; letter-spacing: 2px; margin-bottom: 4px; transition: 0.3s; }
+        #countdown-display { font-size: 38px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+        .window-end-badge { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--text-dim); border: 1px solid var(--border); margin-top: 10px; }
+
+        /* Intel Card */
+        .intel-card { background: rgba(47, 129, 247, 0.08); border: 1px solid var(--accent); border-radius: 18px; padding: 16px; margin-bottom: 20px; }
+        .intel-header { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+        #intel-body { font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
+
+        /* Settings Card */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin: 0 0 10px 4px; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .input-field { background: #0d1117; border: 1px solid var(--border); border-radius: 12px; padding: 14px; color: white; width: 100%; font-size: 16px; outline: none; appearance: none; }
+        label { font-size: 10px; font-weight: 700; color: var(--text-dim); display: block; margin-bottom: 6px; }
+        .protein-val { font-size: 26px; font-weight: 800; color: var(--accent); text-align: center; display: block;}
+
+        /* Timeline UI */
+        .timeline-item { display: flex; gap: 16px; margin-bottom: 20px; }
+        .time-col { min-width: 65px; font-size: 12px; font-weight: 700; color: var(--accent); }
+        .content-col { flex: 1; border-left: 1px solid var(--border); padding-left: 18px; position: relative; }
+        .content-col::before { content: ''; position: absolute; left: -5px; top: 4px; width: 9px; height: 9px; background: var(--bg); border: 2px solid var(--accent); border-radius: 50%; }
+        .event-name { font-weight: 700; font-size: 14px; }
+        .event-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="timer-card">
+        <div class="progress-container">
+            <svg><circle class="circle-bg" cx="110" cy="110" r="95"></circle><circle id="progress-bar" class="circle-progress" cx="110" cy="110" r="95"></circle></svg>
+            <div class="timer-content">
+                <div id="timer-label">CALIBRATING</div>
+                <div id="countdown-display">00:00:00</div>
+            </div>
+        </div>
+        <div class="window-end-badge">FEEDING ENDS AT: <span id="feeding-end-display">--:-- --</span></div>
+    </div>
+
+    <div class="intel-card">
+        <div class="intel-header"><i class="fas fa-dna"></i> Metabolic Intelligence</div>
+        <div id="intel-body">Detecting current phase...</div>
+    </div>
+
+    <div class="section-title">Terminal Settings</div>
+    <div class="card">
+        <div class="input-row">
+            <div>
+                <label>BREAK TIME</label>
+                <select class="input-field" id="breakTime" onchange="updateAll()">
+                    <option value="12">12:00 PM</option>
+                    <option value="13">1:00 PM</option>
+                    <option value="14">2:00 PM</option>
+                    <option value="15">3:00 PM</option>
+                    <option value="16">4:00 PM</option>
+                    <option value="17">5:00 PM</option>
+                    <option value="18" selected>6:00 PM</option>
+                    <option value="19">7:00 PM</option>
+                    <option value="20">8:00 PM</option>
+                </select>
+            </div>
+            <div><label>WEIGHT (LBS)</label><input type="number" class="input-field" id="weight" value="180" oninput="updateAll()"></div>
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top:15px;"><span class="protein-val" id="proteinRange">131 - 180</span><label style="text-align: center;">PROTEIN REFEED GOAL (G)</label></div>
+    </div>
+
+    <div class="section-title">18/6 Protocol Stages</div>
+    <div class="card"><div id="schedule-output"></div></div>
+</div>
+
+<script>
+    let lastKnownState = null;
+
+    function formatTime(hour) { 
+        let h = hour % 24; if (h < 0) h += 24; const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:00 ${ampm}`; 
+    }
+
+    function celebrate() {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#2f81f7', '#3fb950', '#ffffff'] });
+        const label = document.getElementById('timer-label');
+        const oldText = label.innerText;
+        label.innerText = "GOAL ACHIEVED";
+        label.style.color = "var(--success)";
+        setTimeout(() => { label.innerText = oldText; }, 5000);
+    }
+
+    function updateAll() { 
+        updateSchedule(); 
+        const breakHour = parseInt(document.getElementById('breakTime').value);
+        document.getElementById('feeding-end-display').innerText = formatTime((breakHour + 6) % 24);
+    }
+
+    function updateSchedule() {
+        const breakHour = parseInt(document.getElementById('breakTime').value);
+        const weight = document.getElementById('weight').value;
+        const container = document.getElementById('schedule-output');
+        document.getElementById('proteinRange').innerText = `${Math.round(weight * 0.73)} - ${Math.round(weight * 1.0)}`;
+        const events = [
+            { time: (breakHour - 14 + 24) % 24, name: 'Transition', desc: 'Blood sugar normalizes. Body begins shifting to glycogen.' },
+            { time: (breakHour - 6 + 24) % 24, name: 'Metabolic Switch', desc: 'Glycogen low. Burning fat and ketones.' },
+            { time: (breakHour - 2 + 24) % 24, name: 'Deep Autophagy', desc: 'Cellular cleanup active. Peak HGH surge.' },
+            { time: breakHour, name: '6-Hour Refeed', desc: 'Window open. Prioritize nutrient density.' }
+        ];
+        container.innerHTML = events.map(ev => `<div class="timeline-item"><div class="time-col">${formatTime(ev.time)}</div><div class="content-col"><div class="event-name">${ev.name}</div><div class="event-desc">${ev.desc}</div></div></div>`).join('');
+    }
+
+    function startTimer() {
+        const progressBar = document.getElementById('progress-bar');
+        const circumference = 2 * Math.PI * 95;
+        setInterval(() => {
+            const now = new Date();
+            const breakHour = parseInt(document.getElementById('breakTime').value);
+            const windowEnd = (breakHour + 6) % 24;
+            
+            let nextBreak = new Date(); nextBreak.setHours(breakHour, 0, 0, 0); if (now > nextBreak) nextBreak.setDate(nextBreak.getDate() + 1);
+            let nextFastStart = new Date(); nextFastStart.setHours(windowEnd, 0, 0, 0); if (now > nextFastStart) nextFastStart.setDate(nextFastStart.getDate() + 1);
+            
+            const isEating = (breakHour < windowEnd) ? (now.getHours() >= breakHour && now.getHours() < windowEnd) : (now.getHours() >= breakHour || now.getHours() < windowEnd);
+            if (lastKnownState !== null && lastKnownState !== isEating) { celebrate(); }
+            lastKnownState = isEating;
+
+            const totalWindow = isEating ? 6 : 18;
+            const target = isEating ? nextFastStart : nextBreak;
+            const diff = target - now;
+            const percent = 1 - (diff / (totalWindow * 3600000));
+            progressBar.style.strokeDashoffset = circumference - (percent * circumference);
+            
+            const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000); const s = Math.floor((diff % 60000) / 1000);
+            document.getElementById('countdown-display').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            
+            const label = document.getElementById('timer-label');
+            const intelBody = document.getElementById('intel-body');
+            const hoursIn = isEating ? 0 : (18 - (diff / 3600000));
+
+            if (isEating) {
+                label.innerText = "6H EATING WINDOW"; label.style.color = "var(--success)";
+                progressBar.style.stroke = "var(--success)"; progressBar.style.filter = "drop-shadow(0 0 8px var(--success))";
+                intelBody.innerHTML = "<b>REFEED PHASE:</b> Nutrient absorption active. Prioritize protein for repair.";
+            } else {
+                label.innerText = "18H FASTING PROTOCOL"; label.style.color = "var(--accent)";
+                progressBar.style.stroke = "var(--accent)"; progressBar.style.filter = "drop-shadow(0 0 8px var(--accent))";
+                if (hoursIn < 4) intelBody.innerHTML = "<b>POST-ABSORPTIVE:</b> Finishing final meal digestion.";
+                else if (hoursIn < 12) intelBody.innerHTML = "<b>GLYCOGEN MODE:</b> Tapping into sugar reserves.";
+                else if (hoursIn < 16) intelBody.innerHTML = "<b>FAT OXIDATION:</b> Fat-burning ramps up.";
+                else intelBody.innerHTML = "<b>DEEP REPAIR:</b> Autophagy active. Recycling cellular waste.";
+            }
+        }, 1000);
+    }
+
+    updateAll(); startTimer();
+</script>
+</body>
+</html>

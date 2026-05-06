@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>18/6 Precision Dashboard</title>
     <link href="https://cloudflare.com" rel="stylesheet">
-    <script src="https://jsdelivr.net"></script>
     <style>
         :root {
             --bg: #0b0e14; --card: #161b22; --accent: #2f81f7; --text: #f0f6fc;
@@ -97,19 +96,8 @@
 </div>
 
 <script>
-    let lastKnownState = null;
-
     function formatTime(hour) { 
         let h = hour % 24; if (h < 0) h += 24; const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:00 ${ampm}`; 
-    }
-
-    function celebrate() {
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#2f81f7', '#3fb950', '#ffffff'] });
-        const label = document.getElementById('timer-label');
-        const oldText = label.innerText;
-        label.innerText = "GOAL ACHIEVED";
-        label.style.color = "var(--success)";
-        setTimeout(() => { label.innerText = oldText; }, 5000);
     }
 
     function updateAll() { 
@@ -144,8 +132,6 @@
             let nextFastStart = new Date(); nextFastStart.setHours(windowEnd, 0, 0, 0); if (now > nextFastStart) nextFastStart.setDate(nextFastStart.getDate() + 1);
             
             const isEating = (breakHour < windowEnd) ? (now.getHours() >= breakHour && now.getHours() < windowEnd) : (now.getHours() >= breakHour || now.getHours() < windowEnd);
-            if (lastKnownState !== null && lastKnownState !== isEating) { celebrate(); }
-            lastKnownState = isEating;
 
             const totalWindow = isEating ? 6 : 18;
             const target = isEating ? nextFastStart : nextBreak;
